@@ -2,19 +2,24 @@
 
 ### How to run it on your own machine
 
-1. # active virtual environment
+1. # Install the python v3.8
+
+    https://www.python.org/downloads/
+
+2. # active virtual environment
 
    ```
-   .\amp_env\Scripts\Activate.ps1
+   $ python -m venv amp_env
+   $ .\amp_env\Scripts\Activate.ps1
    ```
 
-1. #Install the requirements
+3. # Install the requirements
 
    ```
    $ pip install -r requirements.txt
    ```
 
-2. Run the app
+4. # Run the app
 
    ```
    $ streamlit run amp_design_app.py

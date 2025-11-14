@@ -49,7 +49,7 @@ class MyProblemWithData(Problem):
         for i, peptide in enumerate(new_combinations):
             bio_analysis = Bio_analysis(peptide)
  
-            Gravy = bio_analysis.get_gravy()  # hydrophobicity
+            Gravy = bio_analysis.get_gravy()
             instability_index = bio_analysis.get_instability_index()
             Aliphatic_Index = bio_analysis.get_aliphatic_index()
             Boman_index = bio_analysis.get_boman_index()
@@ -111,21 +111,18 @@ class MyProblemWithData(Problem):
                     constraint_type = constraint.get("Type", "max")
                     constraint_value = float(constraint.get("Value"))
 
-                    # 取得該特性的實際值（若不存在則為0）
                     objective = float(physicochemical_properties.get(feature_name))
 
-                    # 建立約束：max → 值應小於上限；min → 值應大於下限
                     if constraint_type == "max":
                         constraints[i, j] = constraint_value - objective
                     else:
                         constraints[i, j] = objective - constraint_value
             else:
-                # 若無任何約束，則不動作或設為0
                 pass
         out["F"] = objectives
         out["G"] = constraints
 
-def amino_acid_percentage(algorithms):
+def amino_acid_percentage(path, algorithms):
     amino_acid_counts = {'A': 0, 'C': 0, 'D': 0, 'E': 0, 'F': 0, 'G': 0, 'H': 0, 'I': 0, 'K': 0, 'L': 0,
                          'M': 0, 'N': 0, 'P': 0, 'Q': 0, 'R': 0, 'S': 0, 'T': 0, 'V': 0, 'W': 0, 'Y': 0}
 
@@ -135,7 +132,7 @@ def amino_acid_percentage(algorithms):
     
     # Load results for all algorithms
     for name in algorithms:
-        filepath = f'{name} optimize result.csv'
+        filepath = os.path.join(path, f"{name} optimize result.csv")
         optimized_result[name] = pd.read_csv(filepath)
             
     for algo_name, pareto_sequences in optimized_result.items():
@@ -158,7 +155,7 @@ def amino_acid_percentage(algorithms):
         st.pyplot(fig)
         plt.close(fig)
 
-def plot_pareto_fronts_many(algorithms, optimization_directions):
+def plot_pareto_fronts_many(path, algorithms, optimization_directions):
     """
     Plot Pareto fronts visualization for all algorithms.
     
@@ -173,23 +170,40 @@ def plot_pareto_fronts_many(algorithms, optimization_directions):
     # Load results for all algorithms
     for name in algorithms:
         try:
-            filepath = f'{name} optimize result.csv'
-            optimized_result[name] = pd.read_csv(filepath)
-            filepath_all_result = f'{name} all optimize result.csv'
-            all_optimized_result[name] = pd.read_csv(filepath_all_result)
-        except FileNotFoundError:
-            st.warning(f"File not found: {filepath}")
+            filepath = os.path.join(path, f"{name} optimize result.csv")
+
+            if os.path.exists(filepath):
+                optimized_result[name] = pd.read_csv(filepath)
+            else:
+                st.warning(f"⚠️ Main optimization result not found for {name}: {filepath}")
+                continue  # 若主結果不存在，不載入後續檔案
+
+            # 所有結果
+            filepath_all_result = os.path.join(path, f"{name} all optimize result.csv")
+            if os.path.exists(filepath_all_result):
+                all_optimized_result[name] = pd.read_csv(filepath_all_result)
+            else:
+                st.info(f"ℹ️ No 'all results' file found for {name} (skipped).")
+
+        except pd.errors.EmptyDataError:
+            st.error(f"❌ CSV file for {name} is empty or corrupted: {filepath}")
             continue
-    
-    if not optimized_result:
-        st.error("No optimization results found.")
-        return
-    
+
+        except Exception as e:
+            st.error(f"❌ Error loading results for {name}: {e}")
+            continue
+
     selected_cols_name = list(optimization_directions.keys())
     st.write(f"**Objectives:** {selected_cols_name}")
     
     for algo_name, df in optimized_result.items():
         all_result_df = all_optimized_result[algo_name]
+        if 'Gravy' in selected_cols_name and optimization_directions['Gravy']=="hydrophobicity":
+            all_result_df['Gravy'] = -all_optimized_result[algo_name]['Gravy']
+
+        for feature, mode in optimization_directions.items():
+            if optimization_directions[feature]=="Maximize":
+                all_result_df[feature] = -all_optimized_result[algo_name][feature]
         st.write(f"### {algo_name}")
         
         missing_cols = [col for col in selected_cols_name if col not in df.columns]
@@ -261,10 +275,10 @@ def plot_pareto_fronts_many(algorithms, optimization_directions):
                         ax.spines['left'].set_visible(False)
                     else:
                         # Scatter plot for non-diagonal
-                        scatter = ax.scatter(all_X_scaled[:, j], all_X_scaled[:, i], 
-                                        c=np.arange(n_samples), cmap='viridis', 
+                        scatter = ax.scatter(all_X[:, j], all_X[:, i], 
+                                        c=np.arange(len(all_X)), cmap='viridis', 
                                         s=50, alpha=0.7, edgecolors='black', linewidth=0.5)
-                        ax.scatter(X_scaled[:, j], X_scaled[:, i], 
+                        ax.scatter(X[:, j], X[:, i], 
                                         color='red', s=50, alpha=0.7, edgecolors='red', linewidth=0.5)
                         
                         # Labels
@@ -277,9 +291,6 @@ def plot_pareto_fronts_many(algorithms, optimization_directions):
                             ax.set_xlabel(selected_cols_name[j], fontsize=10, fontweight='bold')
                         else:
                             ax.set_xlabel('')
-                        
-                        ax.set_xlim([-0.05, 1.05])
-                        ax.set_ylim([-0.05, 1.05])
                         ax.grid(True, alpha=0.3)
             
             fig.suptitle(f'Scatter Matrix Plot - {algo_name}', fontsize=16, fontweight='bold')
@@ -291,7 +302,7 @@ def plot_pareto_fronts_many(algorithms, optimization_directions):
             st.error(f"Error plotting {algo_name}: {e}")
             continue
 
-def plot_pareto_fronts_multi(algorithms, optimization_directions):
+def plot_pareto_fronts_multi(path, algorithms, optimization_directions):
     """
     Plot Pareto fronts visualization for all algorithms.
     This function supports 2D, 3D and scatter matrix (for 3+ objectives).
@@ -302,24 +313,39 @@ def plot_pareto_fronts_multi(algorithms, optimization_directions):
     # Load results for all algorithms
     for name in algorithms:
         try:
-            filepath = f'{name} optimize result.csv'
-            optimized_result[name] = pd.read_csv(filepath)
-            filepath_all_result = f'{name} all optimize result.csv'
-            all_optimized_result[name] = pd.read_csv(filepath_all_result)
-        except FileNotFoundError:
-            st.warning(f"File not found: {filepath}")
+            filepath = os.path.join(path, f"{name} optimize result.csv")
+            if os.path.exists(filepath):
+                optimized_result[name] = pd.read_csv(filepath)
+            else:
+                st.warning(f"⚠️ Main optimization result not found for {name}: {filepath}")
+                continue  # 若主結果不存在，不載入後續檔案
+
+            # 所有結果
+            filepath_all_result = os.path.join(path, f"{name} all optimize result.csv")
+            if os.path.exists(filepath_all_result):
+                all_optimized_result[name] = pd.read_csv(filepath_all_result)
+            else:
+                st.info(f"ℹ️ No 'all results' file found for {name} (skipped).")
+
+        except pd.errors.EmptyDataError:
+            st.error(f"❌ CSV file for {name} is empty or corrupted: {filepath}")
             continue
-    
-    if not optimized_result:
-        st.error("No optimization results found.")
-        return
-    
+
+        except Exception as e:
+            st.error(f"❌ Error loading results for {name}: {e}")
+            continue
+
     selected_cols_name = list(optimization_directions.keys())
     st.write(f"**Objectives:** {selected_cols_name}")
     
     for algo_name, df in optimized_result.items():
         all_result_df = all_optimized_result[algo_name]
-        all_result_df['Gravy'] = -all_optimized_result[algo_name]['Gravy']
+        if 'Gravy' in selected_cols_name and optimization_directions['Gravy']=="hydrophobicity":
+            all_result_df['Gravy'] = -all_optimized_result[algo_name]['Gravy']
+
+        for feature, mode in optimization_directions.items():
+            if optimization_directions[feature]=="Maximize":
+                all_result_df[feature] = -all_optimized_result[algo_name][feature]
         st.write(f"### {algo_name}")
         
         missing_cols = [col for col in selected_cols_name if col not in df.columns]
@@ -433,7 +459,8 @@ def plot_pareto_fronts_multi(algorithms, optimization_directions):
 
 # ----------------------------
 class algorithms_setup():
-    def __init__(self, df, algorithms_list, pop_size, generations, optimization_directions, length, opt, constraint_dict_list):
+    def __init__(self, path, df, algorithms_list, pop_size, generations, optimization_directions, length, opt, constraint_dict_list):
+        self.path = path
         self.df = df
         self.algorithms_list = algorithms_list
         self.pop_size = pop_size
@@ -470,7 +497,7 @@ class algorithms_setup():
             
             for feature, mode in self.optimization_directions.key():
                 if feature == "Gravy":
-                    if mode.lower() in ["hydrophobicity", "↑ gravy"]:
+                    if mode.lower() in ["hydrophobicity"]:
                         self.problem.flip_objective(feature)
                 else:
                     if mode.lower() == "maximize":
@@ -511,11 +538,14 @@ class algorithms_setup():
             else:
                 res = minimize(self.problem, algorithm, ('n_gen', self.generations), pf=self.pf, verbose=False)
             
-            res_dict = pd.DataFrame(res.F)
-            st.dataframe(res_dict)
+            # debug
+            # res_dict = pd.DataFrame(res.F)
+            # st.dataframe(res_dict)
+
             res_dict = {}
             for i, obj_name in enumerate(self.optimization_directions.keys()):
                 res_dict[obj_name] = res.F[:, i]
+            
             res_dict = pd.DataFrame(res_dict)
 
             pareto_dict = {
@@ -537,63 +567,14 @@ class algorithms_setup():
             }
 
             pareto_df = pd.DataFrame(pareto_dict)
-            
-
             merged_df = pd.concat([res_dict, pareto_df], axis=1)
             merged_df = merged_df.loc[:,~merged_df.columns.duplicated()].dropna()  # 移除重複欄位
+            if "optimization_results" not in st.session_state:
+                st.session_state.optimization_results = {}
 
-
-            res_dict_flipped = res_dict.copy()
-            pareto_df_flipped = pareto_df.copy()
-            merged_df_flipped = merged_df.copy()
-
-            if self.optimization_directions["Gravy"] == 'hydrophobicity':
-                st.write('test flipped')
-                res_dict_flipped['Gravy'] = -res_dict_flipped['Gravy']
-                pareto_df_flipped['Gravy'] = -pareto_df_flipped['Gravy']
-                merged_df_flipped['Gravy'] = -merged_df_flipped['Gravy']
-
-                st.write(f"The pareto front for {name}:\n")
-                st.dataframe(res_dict)
-                st.dataframe(res_dict_flipped)
-
-                st.write(f"All optimized result for {name}:\n")
-                st.dataframe(pareto_df)
-                st.dataframe(pareto_df_flipped)
-
-                st.write(f"Optimize objective for {name}:\n")
-                st.dataframe(merged_df)
-                st.dataframe(merged_df_flipped)
-            else:
-                st.dataframe(res_dict_flipped)
-
-                st.write(f"Optimize objective for {name}:\n")
-                st.dataframe(pareto_df_flipped)
-
-                st.write(f"Optimize objective for {name}:\n")
-                st.dataframe(merged_df_flipped)
-            
-            # 將結果存入 session_state
             st.session_state.optimization_results[name] = {
-                'res_dict': res_dict_flipped,
-                'pareto_df': pareto_df_flipped,
-                'merged_df': merged_df_flipped
+                "res_dict": res_dict,
+                "pareto_df": pareto_df,
+                "merged_df": merged_df
             }
-            
-            # 存檔
-            pareto_df_flipped.to_csv(f"{name} all optimize result.csv", index=False)
-            st.info(f"Optimize pareto front result saved at file: {name} all optimize result.csv")
-
-            merged_df_flipped.to_csv(f"{name} optimize result.csv", index=False)
-            st.info(f"Optimize pareto front result saved at file: {name} optimize result.csv")
-
-            # Save as FASTA file
-            fasta_path = f"{name}.fasta"
-            with open(fasta_path, "w") as fasta_file:
-                for _, row in merged_df.iterrows():
-                    fasta_file.write(f">{row['sequence']}\n{row['sequence']}\n")
-                    
-            st.info(f"FASTA saved at file: {fasta_path}")
-        #st.session_state.optimization_results[res_dict, pareto_df, ]
-        # 回傳結果列表
         return list(st.session_state.optimization_results.keys())
