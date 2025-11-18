@@ -6,11 +6,11 @@
 
     https://www.python.org/downloads/
 
-2. # active virtual environment
+2. # active virtual environment run on cmd
 
    ```
    $ python -m venv amp_env
-   $ Set-ExecutionPolicy -Scope Currentuser -ExecutionPolicy Remotesigned
+   $ powershell -Command "Set-ExecutionPolicy RemoteSigned -Scope CurrentUser"
    $ .\amp_env\Scripts\Activate.ps1
    ```
 
