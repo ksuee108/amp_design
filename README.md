@@ -15,6 +15,8 @@
    # if you more then one version of python 
    ```
    $ py -{python version} -m venv amp_env
+   ```
+   ```
    $ Set-ExecutionPolicy RemoteSigned -Scope CurrentUser
    $ .\amp_env\Scripts\Activate.ps1
    ```
