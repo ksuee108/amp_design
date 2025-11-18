@@ -12,9 +12,9 @@
    $ cd {to where you download path}
    $ python -m venv amp_env
    ```
-   # if you more then one version of python 
+   
    ```
-   $ py -{python version} -m venv amp_env
+   $ py -{python version} -m venv amp_env   # if you more then one version of python 
    ```
    ```
    $ Set-ExecutionPolicy RemoteSigned -Scope CurrentUser
