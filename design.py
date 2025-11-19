@@ -174,9 +174,8 @@ def plot_pareto_fronts_many(path, algorithms, optimization_directions):
                 optimized_result[name] = pd.read_csv(filepath)
             else:
                 st.warning(f"⚠️ Main optimization result not found for {name}: {filepath}")
-                continue  # 若主結果不存在，不載入後續檔案
+                continue
 
-            # 所有結果
             filepath_all_result = os.path.join(path, f"{name} all optimize result.csv")
             if os.path.exists(filepath_all_result):
                 all_optimized_result[name] = pd.read_csv(filepath_all_result)
@@ -316,9 +315,8 @@ def plot_pareto_fronts_multi(path, algorithms, optimization_directions):
                 optimized_result[name] = pd.read_csv(filepath)
             else:
                 st.warning(f"⚠️ Main optimization result not found for {name}: {filepath}")
-                continue  # 若主結果不存在，不載入後續檔案
+                continue
 
-            # 所有結果
             filepath_all_result = os.path.join(path, f"{name} all optimize result.csv")
             if os.path.exists(filepath_all_result):
                 all_optimized_result[name] = pd.read_csv(filepath_all_result)
@@ -399,7 +397,6 @@ def plot_pareto_fronts_multi(path, algorithms, optimization_directions):
                 plt.close(fig)
             
             # For 3 or more objectives show scatter matrix
-            
             if n_objectives >= 3:
                 st.write("**Scatter Matrix Plot:**")
                 
@@ -460,11 +457,10 @@ def plot_pareto_fronts_multi(path, algorithms, optimization_directions):
 class algorithms_setup():
     def __init__(self, path, df, algorithms_list, pop_size, generations, optimization_directions, length, opt, constraint_dict_list):
         self.path = path
-        self.df = df
+        self.sequences = df['sequence']
         self.algorithms_list = algorithms_list
         self.pop_size = pop_size
         self.generations = generations
-        self.sequences = self.df['sequence'].tolist()
         self.optimization_directions = optimization_directions
         self.length = length
         self.opt = opt
@@ -567,7 +563,7 @@ class algorithms_setup():
 
             pareto_df = pd.DataFrame(pareto_dict)
             merged_df = pd.concat([res_dict, pareto_df], axis=1)
-            merged_df = merged_df.loc[:,~merged_df.columns.duplicated()].dropna()  # 移除重複欄位
+            merged_df = merged_df.loc[:,~merged_df.columns.duplicated()].dropna()
             if "optimization_results" not in st.session_state:
                 st.session_state.optimization_results = {}
 
