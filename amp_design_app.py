@@ -1,6 +1,5 @@
 import streamlit as st
 import pandas as pd
-import numpy as np
 from design import  algorithms_setup, plot_pareto_fronts_many, plot_pareto_fronts_multi, amino_acid_percentage
 import os
 from BioAnalysis import Bio_analysis
@@ -50,7 +49,6 @@ body {
 st.markdown(footer, unsafe_allow_html=True)
 
 with main_tab1:
-
     # ----------------------------
     # Sidebar inputs
     # ----------------------------
@@ -217,18 +215,18 @@ with main_tab1:
             'Secondary structure fraction Sheet', 'Boman Index'
         ]
     )
-
+    can_proceed = True
     if len(Bacteria) == 0 and uploaded_file is None:
         st.warning("Please select at least one Bacteria or upload a dataset.")
-        st.stop()
+        can_proceed = False
 
     if len(opt) < 2:
         st.warning("Please select at least two objectives to optimize.")
-        st.stop()
+        can_proceed = False
 
     if len(algorithms) < 1:
         st.warning("Please select at least one algorithm to optimize.")
-        st.stop()
+        can_proceed = False
     else:
         optimization_directions = {}
         for i in opt:
@@ -309,10 +307,7 @@ with main_tab1:
         # ----------------------------
         st.markdown("---")
 
-        if len(Bacteria) == 0 and uploaded_file is None:
-            st.warning("Please select at least one bacteria from the sidebar or upload a dataset.")
-            st.stop()
-        elif uploaded_file is not None:
+        if uploaded_file is not None:
             st.subheader("Uploaded peptide data preview")
             st.dataframe(all_features)
             df = pd.DataFrame(all_features)
@@ -346,7 +341,7 @@ with main_tab1:
                     st.success(f"Loaded data for {', '.join(Bacteria)} with {len(df)} Sequences.")
                 except FileNotFoundError as e:
                     st.error(f"Missing file: {e}")
-                    st.stop()
+                    can_proceed = False
             else:
                 df = st.session_state.loaded_df
                 st.success(f"Using cached data for {', '.join(Bacteria)} with {len(df)} Sequences.")
@@ -380,7 +375,7 @@ with main_tab1:
                 except Exception as e:
                     st.error(f"Error during optimization: {e}")
         else:
-            st.stop()
+            st.error(f"Error during optimization: {e}")
         # ----------------------------
         # Display cached results
         # ----------------------------
@@ -422,9 +417,9 @@ with main_tab1:
                 with tab3:
                     st.write(f"**Merged data for {selected_algo}:**")
                     st.dataframe(merged_df_flipped)
-
         else:
             st.info("No optimization results cached yet. Run optimization first.")
+            can_proceed = False
 
         for algo in algorithms:
             if algo not in st.session_state.optimization_results:
@@ -460,6 +455,8 @@ with main_tab1:
                     plot_pareto_fronts_many(user_home, algorithms, optimization_directions)
                 else:
                     plot_pareto_fronts_multi(user_home, algorithms, optimization_directions)
+        else:
+            can_proceed = False
 
 with main_tab2:
     st.header("About this App")
