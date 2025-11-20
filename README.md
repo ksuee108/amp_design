@@ -1,4 +1,4 @@
-# amp_design
+# AMP Designer
 
 ### How to run it on your own machine
 
