@@ -200,7 +200,7 @@ with main_tab1:
         )
 
         pop_size = st.number_input("Population size", min_value=10, max_value=400, value=80, step=10)
-        length = st.number_input("Peptide Sequence length", min_value=10, max_value=20, value=10, step=1)
+        length = st.number_input("Peptide Sequence length", min_value=10, max_value=50, value=10, step=1)
         generations = st.number_input("Number of generations", min_value=10, max_value=200, value=100, step=1)
         
     # ----------------------------
