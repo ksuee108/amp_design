@@ -1,4 +1,4 @@
-# AMP Designer
+# MO-AMP Designer
 
 ### How to run it on your own machine
 

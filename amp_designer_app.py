@@ -8,8 +8,8 @@ from io import StringIO
 
 user_home = os.path.expanduser("~")
 
-st.set_page_config(page_title="Antimicrobial peptides designer", layout="wide")
-st.title("🧬 Antimicrobial peptides designer")
+st.set_page_config(page_title="MO-AMP designer", layout="wide")
+st.title("🧬 MO-AMP designer")
 st.text("This app allows users to explore and design antimicrobial peptides by multi-objective optimization.")
 main_tab1, main_tab2, main_tab3, main_tab4 = st.tabs(["Home", "About this App", "How to Design", "Related Databases and Prediction Websites"])
 
