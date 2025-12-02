@@ -239,7 +239,6 @@ def plot_pareto_fronts_many(path, algorithms, optimization_directions):
         # Normalize data
         scaler = MinMaxScaler()
         X_scaled = scaler.fit_transform(X)
-        all_X_scaled = scaler.fit_transform(all_X)
         
         # Color map
         colors = plt.cm.viridis(np.linspace(0, 1, n_samples))
